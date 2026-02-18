@@ -1,0 +1,19 @@
+name: another sample code
+on: push
+
+jobs:
+    first-job:
+        runs-on: ubuntu-latest
+        steps:
+            - name: say cheese
+              run: echo "CHEESE"
+
+    second-job:
+        runs-on: ubuntu-latest
+        steps:
+            - name: successful step
+              run: |
+                echo "Success"
+                exit 1
+            - name: say Pizza
+              run: echo "PIZZAA"
