@@ -1,0 +1,10 @@
+name: Cron Job Workflow
+on:
+  schedule:
+    - cron: '*/7 * * * *' 
+jobs:
+    cron-job:
+        runs-on: ubuntu-latest
+        steps:
+          - name: say Hello on schedule
+            run: echo "Hello, this workflow runs on a schedule!"
