@@ -1,0 +1,22 @@
+name: All Events Workflow
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '*/7 * * * *'
+jobs:
+  run-on-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: say Hello on push
+        run: echo "Hello, this workflow runs on push events!"
+  run-on-pull-request:
+    runs-on: ubuntu-latest
+    steps:
+      - name: say Hello on pull request
+        run: echo "Hello, this workflow runs on pull request events!"
+  cron-job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: say Hello on schedule
+        run: echo "Hello, this workflow runs on a schedule!"
