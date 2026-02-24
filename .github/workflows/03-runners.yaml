@@ -1,0 +1,21 @@
+name: Runners workflow
+on: push
+
+jobs:
+    Ubuntu-runner:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Check runner types
+              run: echo "This job runs on an Ubuntu runner."
+
+    Windows-runner:
+        runs-on: windows-latest
+        steps:
+            - name: Check runner types
+              run: echo "This job runs on a Windows runner."
+
+    MacOS-runner:
+        runs-on: macos-latest
+        steps:
+            - name: Check runner types
+              run: echo "This job runs on a macOS runner."
