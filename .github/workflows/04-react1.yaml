@@ -1,9 +1,16 @@
-
+// ...existing code...
 name: React checkout code
-on: push
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -12,7 +19,8 @@ jobs:
       - name: Listing files (root)
         run: ls -la
 
-      - name: Find package.json and show its path
+      - name: Find package.json and set dir
+        id: findpkg
         run: |
           pkg=$(git ls-files | grep -m1 "package.json" || true)
           if [ -z "$pkg" ]; then
@@ -20,25 +28,75 @@ jobs:
             git ls-tree --name-only -r HEAD
             exit 1
           fi
+          dir=$(dirname "$pkg")
           echo "Found package.json at: $pkg"
-          dirname "$pkg"
+          echo "dir=$dir" >> $GITHUB_OUTPUT
 
-      - name: Setup Node.js and install dependencies (auto-detect)
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20.x'
 
+      - name: Check node & npm versions
+        run: |
+          node -v
+          npm -v
+        working-directory: ${{ steps.findpkg.outputs.dir }}
+
       - name: Install dependencies
         run: |
-          pkg=$(git ls-files | grep -m1 "package.json" || true)
-          dir="."
-          if [ -n "$pkg" ]; then
-            dir=$(dirname "$pkg")
-          fi
-          echo "Installing in directory: $dir"
-          cd "$dir"
           if [ -f package-lock.json ] || [ -f pnpm-lock.yaml ]; then
             npm ci
           else
             npm install
           fi
+        working-directory: ${{ steps.findpkg.outputs.dir }}
+
+      - name: Debug: check GITHUB_TOKEN presence
+        run: |
+          if [ -z "${GITHUB_TOKEN}" ]; then
+            echo "GITHUB_TOKEN is NOT set"
+            exit 1
+          fi
+          echo "GITHUB_TOKEN is set (value is masked in logs)."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run npm start (smoke test)
+        run: |
+          # start dev server in background and test HTTP response, then kill it
+          npm start & pid=$!
+          echo "Waiting for server to start (7s)..."
+          sleep 7
+          if curl --fail --max-time 5 http://127.0.0.1:3000 >/dev/null 2>&1; then
+            echo "Dev server responded on http://127.0.0.1:3000"
+            echo "APP_URL=http://127.0.0.1:3000" >> $GITHUB_OUTPUT
+          else
+            if curl --fail --max-time 5 http://127.0.0.1:5173 >/dev/null 2>&1; then
+              echo "Dev server responded on http://127.0.0.1:5173"
+              echo "APP_URL=http://127.0.0.1:5173" >> $GITHUB_OUTPUT
+            else
+              echo "Dev server did not respond on expected ports."
+              kill $pid || true
+              exit 1
+            fi
+          fi
+          kill $pid || true
+        working-directory: ${{ steps.findpkg.outputs.dir }}
+
+      - name: Build production bundle
+        run: npm run build
+        working-directory: ${{ steps.findpkg.outputs.dir }}
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ${{ steps.findpkg.outputs.dir }}/build
+
+      - name: Show published URL
+        run: |
+          owner=${{ github.repository_owner }}
+          repo=${{ github.event.repository.name }}
+          echo "Your app should be available at: https://$owner.github.io/$repo/"
+# ...existing code...
