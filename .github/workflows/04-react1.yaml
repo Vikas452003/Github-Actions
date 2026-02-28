@@ -1,17 +1,44 @@
-name: React checkout code.
+
+name: React checkout code
 on: push
 
 jobs:
-    build:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
-            - name: Listing files
-              run: ls
-            - name: Setup Node.js
-              uses: actions/setup-node@v3
-              with:
-                node-version: '20.x'
-            - name: Install dependencies
-              run: npm install
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Listing files (root)
+        run: ls -la
+
+      - name: Find package.json and show its path
+        run: |
+          pkg=$(git ls-files | grep -m1 "package.json" || true)
+          if [ -z "$pkg" ]; then
+            echo "No package.json found in repository."
+            git ls-tree --name-only -r HEAD
+            exit 1
+          fi
+          echo "Found package.json at: $pkg"
+          dirname "$pkg"
+
+      - name: Setup Node.js and install dependencies (auto-detect)
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20.x'
+
+      - name: Install dependencies
+        run: |
+          pkg=$(git ls-files | grep -m1 "package.json" || true)
+          dir="."
+          if [ -n "$pkg" ]; then
+            dir=$(dirname "$pkg")
+          fi
+          echo "Installing in directory: $dir"
+          cd "$dir"
+          if [ -f package-lock.json ] || [ -f pnpm-lock.yaml ]; then
+            npm ci
+          else
+            npm install
+          fi
