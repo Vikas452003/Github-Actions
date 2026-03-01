@@ -2,7 +2,7 @@ name: Event filters
 on: 
     push:
         branches:
-            - main
+            - test-branch
 
 jobs:
     build:
