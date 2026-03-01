@@ -1,0 +1,9 @@
+name: Pull Request Workflow
+on: pull_request
+
+jobs:
+    run-on-pull-request:
+        runs-on: ubuntu-latest
+        steps:
+            - name: say Hello on pull request
+              run: echo "Hello, this workflow runs on pull request events!"
