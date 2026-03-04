@@ -1,0 +1,13 @@
+name: Activity types
+on:
+    pull_request:
+        types: [opened, synchronize]
+        branches:
+            - main
+
+jobs:
+    echo: 
+        runs-on: ubuntu-latest
+        steps:
+            - name: Run a script
+              run: echo "This workflow runs on pull request opened or synchronize to main branch"
